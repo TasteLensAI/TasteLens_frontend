@@ -1,35 +1,32 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Flex, Box } from "@radix-ui/themes";
+import { Routes, Route, useLocation } from "react-router-dom";
+import { Navigation } from "./components/Navigation";
+import { HomePage, MoviesPage, NotFoundPage } from "./pages";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+    const location = useLocation();
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    // Extract current page from pathname
+    const getCurrentPage = () => {
+        const path = location.pathname;
+        if (path === "/") return "home";
+        if (path === "/movies") return "movies";
+        return "home";
+    };
+
+    return (
+        <Flex direction="column" style={{ minHeight: "100vh" }}>
+            {/* Navigation Bar */}
+            <Navigation currentPage={getCurrentPage()} />
+
+            {/* Page Content */}
+            <Box style={{ flex: "1" }}>
+                <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/movies" element={<MoviesPage />} />
+                    <Route path="*" element={<NotFoundPage />} />
+                </Routes>
+            </Box>
+        </Flex>
+    );
 }
-
-export default App
