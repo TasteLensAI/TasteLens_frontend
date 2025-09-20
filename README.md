@@ -1,6 +1,16 @@
-# React + TypeScript + Vite
+# TasteLens - Movie Recommendation System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack movie recommendation application built with React + TypeScript frontend and FastAPI backend.
+
+## Project Structure
+
+- **Frontend**: React + TypeScript + Vite application
+- **Backend**: FastAPI Python backend with REST API
+
+## Getting Started
+
+### Frontend Development
+The frontend provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
 
@@ -67,3 +77,49 @@ export default defineConfig([
   },
 ])
 ```
+
+## Backend Development
+
+The backend is a FastAPI application that provides REST API endpoints for the frontend.
+
+### Installation
+1. Navigate to the backend directory: `cd backend`
+2. Install Python dependencies: `pip install -r requirements.txt`
+
+### Running the Backend
+```bash
+cd backend
+python run_server.py
+```
+The API will be available at `http://localhost:8000` with interactive documentation at `http://localhost:8000/docs`.
+
+### API Endpoints
+- `GET /api/movies` - Get movies with optional category filtering
+- `GET /api/movies/{id}` - Get specific movie details  
+- `GET /api/categories` - Get all movie categories
+- `GET /api/navigation` - Get navigation items for UI
+- `GET /api/theme` - Get theme configuration
+
+See [backend/README.md](backend/README.md) for detailed API documentation.
+
+## Development Workflow
+
+1. Start the backend server: `cd backend && python run_server.py`
+2. In a new terminal, start the frontend: `npm run dev`
+3. Frontend will be available at `http://localhost:5173`
+4. Backend API at `http://localhost:8000`
+
+## Features
+
+### Milestone 1 (Current)
+- ✅ FastAPI backend with REST API
+- ✅ Movie listings by category
+- ✅ Navigation and theme configuration
+- ✅ Sample movie data and categories
+- 🚧 React frontend with Radix UI (in progress)
+
+### Future Milestones
+- User authentication and profiles
+- Movie recommendations engine
+- Reviews and ratings system
+- Advanced search and filtering
