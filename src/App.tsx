@@ -1,7 +1,9 @@
 import { Flex, Box } from "@radix-ui/themes";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { Navigation } from "./components/Navigation";
-import { HomePage, MoviesPage, NotFoundPage } from "./pages";
+import { HomePage, MoviesPage, NotFoundPage, LoginPage } from "./pages";
+import { ApiProvider } from "./contexts/ApiContext";
+import { AuthProvider } from "./contexts/AuthContext";
 
 export default function App() {
     const location = useLocation();
@@ -11,22 +13,28 @@ export default function App() {
         const path = location.pathname;
         if (path === "/") return "home";
         if (path === "/movies") return "movies";
+        if (path === "/login") return "login";
         return "home";
     };
 
     return (
-        <Flex direction="column" style={{ minHeight: "100vh" }}>
-            {/* Navigation Bar */}
-            <Navigation currentPage={getCurrentPage()} />
+        <ApiProvider>
+            <AuthProvider>
+                <Flex direction="column" style={{ minHeight: "100vh" }}>
+                    {/* Navigation Bar */}
+                    <Navigation currentPage={getCurrentPage()} />
 
-            {/* Page Content */}
-            <Box style={{ flex: "1" }}>
-                <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/movies" element={<MoviesPage />} />
-                    <Route path="*" element={<NotFoundPage />} />
-                </Routes>
-            </Box>
-        </Flex>
+                    {/* Page Content */}
+                    <Box style={{ flex: "1" }}>
+                        <Routes>
+                            <Route path="/" element={<HomePage />} />
+                            <Route path="/movies" element={<MoviesPage />} />
+                            <Route path="/login" element={<LoginPage />} />
+                            <Route path="*" element={<NotFoundPage />} />
+                        </Routes>
+                    </Box>
+                </Flex>
+            </AuthProvider>
+        </ApiProvider>
     );
 }

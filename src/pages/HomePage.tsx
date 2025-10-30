@@ -1,6 +1,13 @@
-import { Box, Flex, Text, Heading, Card } from "@radix-ui/themes";
+import { Box, Flex, Text, Heading, Card, Button } from "@radix-ui/themes";
+import { useNavigate } from "react-router-dom";
 
 export function HomePage() {
+    const navigate = useNavigate();
+
+    const handleLoginClick = () => {
+        navigate("/login");
+    };
+
     return (
         <Box p="6">
             <Flex
@@ -117,13 +124,27 @@ export function HomePage() {
                             TasteLens guide you to cinematic experiences
                             perfectly matched to your taste.
                         </Text>
+
+                        <Flex gap="3" mt="3">
+                            <Button
+                                size="3"
+                                onClick={handleLoginClick}
+                                style={{
+                                    backgroundColor: "var(--accent-9)",
+                                    color: "white",
+                                }}
+                            >
+                                Sign In / Create Account
+                            </Button>
+                        </Flex>
+
                         <Text
                             size="2"
                             color="gray"
                             style={{ marginTop: "var(--space-2)" }}
                         >
-                            Navigate to the Movies section above to begin your
-                            journey!
+                            Already have an account? Sign in to get personalized
+                            recommendations!
                         </Text>
                     </Flex>
                 </Card>
