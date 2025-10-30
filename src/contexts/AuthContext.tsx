@@ -46,7 +46,7 @@ interface RegisterData {
 }
 
 interface LoginResponse {
-    token: string;
+    token: string | { access_token: string; token_type?: string };
     refresh_token?: string;
     user: User;
     expires_in?: number;
@@ -182,11 +182,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             if (response.ok) {
                 const data: LoginResponse = await response.json();
 
+                // Extract token string (handle both string and object formats)
+                const tokenString =
+                    typeof data.token === "string"
+                        ? data.token
+                        : data.token.access_token;
+
                 // Update tokens and user
-                setToken(data.token);
+                setToken(tokenString);
                 setUser(data.user);
 
-                tokenStorage.setToken(data.token);
+                tokenStorage.setToken(tokenString);
                 tokenStorage.setUser(data.user);
 
                 if (data.refresh_token) {
@@ -222,11 +228,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             if (response.ok) {
                 const data: LoginResponse = await response.json();
 
+                // Extract token string (handle both string and object formats)
+                const tokenString =
+                    typeof data.token === "string"
+                        ? data.token
+                        : data.token.access_token;
+
                 // Store tokens and user
-                setToken(data.token);
+                setToken(tokenString);
                 setUser(data.user);
 
-                tokenStorage.setToken(data.token);
+                tokenStorage.setToken(tokenString);
                 tokenStorage.setUser(data.user);
 
                 if (data.refresh_token) {
@@ -267,10 +279,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
                 // If registration returns a token, log the user in automatically
                 if (data.token && data.user) {
-                    setToken(data.token);
+                    // Extract token string (handle both string and object formats)
+                    const tokenString =
+                        typeof data.token === "string"
+                            ? data.token
+                            : data.token.access_token;
+
+                    setToken(tokenString);
                     setUser(data.user);
 
-                    tokenStorage.setToken(data.token);
+                    tokenStorage.setToken(tokenString);
                     tokenStorage.setUser(data.user);
 
                     if (data.refresh_token) {

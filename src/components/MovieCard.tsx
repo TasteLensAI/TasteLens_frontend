@@ -1,6 +1,18 @@
-import { Card, Flex, Text, Badge, Box, IconButton } from "@radix-ui/themes";
-import { useState, useEffect, useRef } from "react";
+import {
+    Card,
+    Flex,
+    Text,
+    Badge,
+    Box,
+    IconButton,
+    Dialog,
+    Heading,
+    VisuallyHidden,
+} from "@radix-ui/themes";
+import { useState, useEffect } from "react";
 import { BookmarkIcon, CheckIcon, ImageIcon } from "@radix-ui/react-icons";
+import { useApi } from "../contexts/ApiContext";
+import { useAuth } from "../contexts/AuthContext";
 import type { Movie } from "../types/movie";
 
 interface MovieCardProps {
@@ -179,10 +191,13 @@ function MovieCardContent({
 
 export function MovieCard({ movie }: MovieCardProps) {
     const [isHovered, setIsHovered] = useState(false);
-    const [isClicked, setIsClicked] = useState(false);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isInWatchlist, setIsInWatchlist] = useState(false);
     const [isWatched, setIsWatched] = useState(false);
-    const cardRef = useRef<HTMLDivElement>(null);
+    const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+
+    const { getEndpoint } = useApi();
+    const { token } = useAuth();
 
     const bigRatio = 80;
     const smallRatio = 100 - bigRatio;
@@ -192,169 +207,374 @@ export function MovieCard({ movie }: MovieCardProps) {
         ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
         : "";
 
-    // Close overlay when clicking outside the card
+    // Check watchlist and watched status when dialog opens
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                cardRef.current &&
-                !cardRef.current.contains(event.target as Node)
-            ) {
-                setIsClicked(false);
+        const checkMovieStatus = async () => {
+            if (!isDialogOpen || !token) {
+                // Reset state when dialog closes
+                if (!isDialogOpen) {
+                    setIsInWatchlist(false);
+                    setIsWatched(false);
+                    setIsCheckingStatus(false);
+                }
+                return;
+            }
+
+            setIsCheckingStatus(true);
+            try {
+                // Check watchlist status
+                const watchlistResponse = await fetch(
+                    getEndpoint(`/wishlist/check/${movie.movieId}`),
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                if (watchlistResponse.ok) {
+                    const watchlistData = await watchlistResponse.json();
+                    console.log("Watchlist check response:", watchlistData);
+                    setIsInWatchlist(watchlistData.inWishlist || false);
+                } else {
+                    console.error(
+                        "Watchlist check failed:",
+                        watchlistResponse.status
+                    );
+                }
+
+                // Check watched status
+                const watchedResponse = await fetch(
+                    getEndpoint(`/watched/check/${movie.movieId}`),
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                if (watchedResponse.ok) {
+                    const watchedData = await watchedResponse.json();
+                    console.log("Watched check response:", watchedData);
+                    setIsWatched(watchedData.isWatched || false);
+                } else {
+                    console.error(
+                        "Watched check failed:",
+                        watchedResponse.status
+                    );
+                }
+            } catch (error) {
+                console.error("Error checking movie status:", error);
+            } finally {
+                setIsCheckingStatus(false);
             }
         };
 
-        if (isClicked) {
-            document.addEventListener("mousedown", handleClickOutside);
+        checkMovieStatus();
+    }, [isDialogOpen, movie.movieId, token, getEndpoint]);
+
+    // Format duration from minutes to hours and minutes
+    const formatDuration = (minutes: number) => {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+    };
+
+    // Parse genres string to array
+    const genresArray = movie.genres
+        ? movie.genres
+              .split("|")
+              .map((g) => g.trim())
+              .filter((g) => g)
+        : [];
+
+    const handleWatchlistClick = async () => {
+        if (!token) return;
+
+        const newWatchlistState = !isInWatchlist;
+        const action = newWatchlistState ? "add" : "remove";
+        const endpoint = `/wishlist/${action}?movieId=${movie.movieId}`;
+
+        try {
+            // Optimistically update UI
+            setIsInWatchlist(newWatchlistState);
+
+            const response = await fetch(getEndpoint(endpoint), {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                // Revert on failure
+                setIsInWatchlist(!newWatchlistState);
+                const errorText = await response.text();
+                console.error("Failed to update watchlist:", errorText);
+            }
+        } catch (error) {
+            // Revert on error
+            setIsInWatchlist(!newWatchlistState);
+            console.error("Error updating watchlist:", error);
         }
-
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, [isClicked]);
-
-    const handleCardClick = () => {
-        setIsClicked(!isClicked);
     };
 
-    const handleWatchlistClick = (e: React.MouseEvent) => {
-        e.stopPropagation(); // Prevent card click event
-        setIsInWatchlist(!isInWatchlist);
-        console.log(`${movie.title} - Watchlist toggled:`, !isInWatchlist);
-    };
+    const handleWatchedClick = async () => {
+        if (!token) return;
 
-    const handleWatchedClick = (e: React.MouseEvent) => {
-        e.stopPropagation(); // Prevent card click event
-        setIsWatched(!isWatched);
-        console.log(`${movie.title} - Watched toggled:`, !isWatched);
+        const newWatchedState = !isWatched;
+        const action = newWatchedState ? "add" : "remove";
+        const endpoint = `/watched/${action}?movieId=${movie.movieId}`;
+
+        try {
+            // Optimistically update UI
+            setIsWatched(newWatchedState);
+
+            const response = await fetch(getEndpoint(endpoint), {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                // Revert on failure
+                setIsWatched(!newWatchedState);
+                const errorText = await response.text();
+                console.error("Failed to update watched status:", errorText);
+            }
+        } catch (error) {
+            // Revert on error
+            setIsWatched(!newWatchedState);
+            console.error("Error updating watched status:", error);
+        }
     };
 
     return (
-        <Card
-            ref={cardRef}
-            size="1"
-            style={{
-                width: "250px",
-                height: "450px",
-                cursor: "pointer",
-                overflow: "hidden",
-                transition: "all 0.3s ease",
-                transform: isHovered ? "translateY(-8px)" : "translateY(0)",
-                boxShadow: isHovered ? "var(--shadow-6)" : "var(--shadow-3)",
-                position: "relative",
-            }}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            onClick={handleCardClick}
-        >
-            <Flex direction="column" height="100%">
-                {/* Image Section */}
-                <MovieCardImage
-                    alt={`${movie.title} poster`}
-                    coverImage={posterUrl}
-                    isHovered={isHovered}
-                    defaultSizeRatio={bigRatio}
-                />
+        <>
+            <Card
+                size="1"
+                style={{
+                    width: "250px",
+                    height: "450px",
+                    cursor: "pointer",
+                    overflow: "hidden",
+                    transition: "all 0.3s ease",
+                    transform: isHovered ? "translateY(-8px)" : "translateY(0)",
+                    boxShadow: isHovered
+                        ? "var(--shadow-6)"
+                        : "var(--shadow-3)",
+                }}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+                onClick={() => setIsDialogOpen(true)}
+            >
+                <Flex direction="column" height="100%">
+                    {/* Image Section */}
+                    <MovieCardImage
+                        alt={`${movie.title} poster`}
+                        coverImage={posterUrl}
+                        isHovered={isHovered}
+                        defaultSizeRatio={bigRatio}
+                    />
 
-                {/* Content Section */}
-                <MovieCardContent
-                    movie={movie}
-                    isHovered={isHovered}
-                    defaultSizeRatio={smallRatio}
-                />
-            </Flex>
+                    {/* Content Section */}
+                    <MovieCardContent
+                        movie={movie}
+                        isHovered={isHovered}
+                        defaultSizeRatio={smallRatio}
+                    />
+                </Flex>
+            </Card>
 
-            {/* Purple Overlay with Action Buttons */}
-            {isClicked && (
-                <Box
+            {/* Expanded Dialog */}
+            <Dialog.Root open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <Dialog.Content
                     style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: "rgba(110, 86, 207, 0)", // Start transparent
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "var(--space-4)",
-                        animation:
-                            "overlayFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards",
-                        zIndex: 10,
+                        maxWidth: "900px",
+                        maxHeight: "90vh",
+                        overflow: "auto",
                     }}
                 >
-                    <Flex
-                        direction="column"
-                        gap="6"
-                        align="center"
-                        style={{
-                            animation:
-                                "buttonsSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards",
-                            opacity: 0,
-                            transform: "translateY(20px)",
-                        }}
-                    >
-                        {/* Watchlist Button */}
-                        <Flex direction="column" align="center" gap="2">
-                            <IconButton
-                                size="4"
-                                variant={isInWatchlist ? "solid" : "soft"}
-                                color={isInWatchlist ? "green" : "gray"}
-                                radius="full"
-                                style={{
-                                    width: "80px",
-                                    height: "80px",
-                                    cursor: "pointer",
-                                    backgroundColor: isInWatchlist
-                                        ? "var(--green-9)"
-                                        : "rgba(255, 255, 255, 0.2)",
-                                    transition: "all 0.3s ease",
-                                }}
-                                onClick={handleWatchlistClick}
-                            >
-                                <BookmarkIcon width="32" height="32" />
-                            </IconButton>
-                            <Text
-                                size="3"
-                                weight="bold"
-                                style={{ color: "white" }}
-                            >
-                                {isInWatchlist
-                                    ? "In Watchlist"
-                                    : "Add to Watchlist"}
-                            </Text>
-                        </Flex>
+                    <VisuallyHidden>
+                        <Dialog.Title>{movie.title}</Dialog.Title>
+                    </VisuallyHidden>
 
-                        {/* Watched Button */}
-                        <Flex direction="column" align="center" gap="2">
-                            <IconButton
-                                size="4"
-                                variant={isWatched ? "solid" : "soft"}
-                                color={isWatched ? "blue" : "gray"}
-                                radius="full"
-                                style={{
-                                    width: "80px",
-                                    height: "80px",
-                                    cursor: "pointer",
-                                    backgroundColor: isWatched
-                                        ? "var(--blue-9)"
-                                        : "rgba(255, 255, 255, 0.2)",
-                                    transition: "all 0.3s ease",
-                                }}
-                                onClick={handleWatchedClick}
+                    <Flex direction="row" gap="6">
+                        {/* Left: Movie Poster */}
+                        <Box
+                            style={{
+                                width: "300px",
+                                flexShrink: 0,
+                            }}
+                        >
+                            {posterUrl ? (
+                                <img
+                                    src={posterUrl}
+                                    alt={`${movie.title} poster`}
+                                    style={{
+                                        width: "100%",
+                                        height: "auto",
+                                        borderRadius: "var(--radius-3)",
+                                        objectFit: "cover",
+                                    }}
+                                />
+                            ) : (
+                                <Flex
+                                    align="center"
+                                    justify="center"
+                                    style={{
+                                        width: "100%",
+                                        height: "450px",
+                                        backgroundColor: "var(--gray-4)",
+                                        borderRadius: "var(--radius-3)",
+                                    }}
+                                >
+                                    <ImageIcon
+                                        width="64"
+                                        height="64"
+                                        style={{ color: "var(--gray-8)" }}
+                                    />
+                                </Flex>
+                            )}
+                        </Box>
+
+                        {/* Right: Movie Details */}
+                        <Flex
+                            direction="column"
+                            gap="4"
+                            style={{
+                                flex: 1,
+                                display: "flex",
+                                flexDirection: "column",
+                            }}
+                        >
+                            <Flex direction="column" gap="2">
+                                <Heading size="7">{movie.title}</Heading>
+                                {movie.original_title &&
+                                    movie.original_title !== movie.title && (
+                                        <Text size="3" color="gray">
+                                            Original: {movie.original_title}
+                                        </Text>
+                                    )}
+                                <Flex align="center" gap="3">
+                                    <Text size="3" color="gray">
+                                        {movie.year}
+                                    </Text>
+                                    <Text size="3" color="gray">
+                                        •
+                                    </Text>
+                                    <Text size="3" color="gray">
+                                        {formatDuration(movie.duration)}
+                                    </Text>
+                                    <Text size="3" color="gray">
+                                        •
+                                    </Text>
+                                    <Badge color="gold" variant="soft">
+                                        ⭐ {movie.tmdbRating.toFixed(1)}
+                                    </Badge>
+                                    <Text size="2" color="gray">
+                                        ({movie.tmdbVoteCount.toLocaleString()}{" "}
+                                        votes)
+                                    </Text>
+                                </Flex>
+                            </Flex>
+
+                            {movie.tagline && (
+                                <Text
+                                    size="3"
+                                    color="gray"
+                                    style={{ fontStyle: "italic" }}
+                                >
+                                    "{movie.tagline}"
+                                </Text>
+                            )}
+
+                            {genresArray.length > 0 && (
+                                <Flex direction="column" gap="2">
+                                    <Text size="2" weight="bold">
+                                        Genres
+                                    </Text>
+                                    <Flex wrap="wrap" gap="2">
+                                        {genresArray.map((genre, index) => (
+                                            <Badge
+                                                key={`${genre}-${index}`}
+                                                variant="outline"
+                                                size="2"
+                                            >
+                                                {genre}
+                                            </Badge>
+                                        ))}
+                                    </Flex>
+                                </Flex>
+                            )}
+
+                            <Flex
+                                direction="column"
+                                gap="2"
+                                style={{ flex: 1 }}
                             >
-                                <CheckIcon width="32" height="32" />
-                            </IconButton>
-                            <Text
-                                size="3"
-                                weight="bold"
-                                style={{ color: "white" }}
-                            >
-                                {isWatched ? "Watched" : "Mark as Watched"}
-                            </Text>
+                                <Text size="2" weight="bold">
+                                    Overview
+                                </Text>
+                                <Text size="3" style={{ lineHeight: "1.6" }}>
+                                    {movie.description ||
+                                        "No description available"}
+                                </Text>
+                            </Flex>
+
+                            {/* Action Buttons - Pushed to bottom */}
+                            <Flex gap="3" mt="auto">
+                                <IconButton
+                                    size="3"
+                                    variant={isInWatchlist ? "solid" : "soft"}
+                                    color={isInWatchlist ? "green" : "gray"}
+                                    disabled={isCheckingStatus}
+                                    style={{
+                                        cursor: isCheckingStatus
+                                            ? "wait"
+                                            : "pointer",
+                                        flex: 1,
+                                    }}
+                                    onClick={handleWatchlistClick}
+                                >
+                                    <BookmarkIcon width="20" height="20" />
+                                    <Text size="2" ml="2">
+                                        {isCheckingStatus
+                                            ? "Loading..."
+                                            : isInWatchlist
+                                            ? "In Watchlist"
+                                            : "Add to Watchlist"}
+                                    </Text>
+                                </IconButton>
+
+                                <IconButton
+                                    size="3"
+                                    variant={isWatched ? "solid" : "soft"}
+                                    color={isWatched ? "blue" : "gray"}
+                                    disabled={isCheckingStatus}
+                                    style={{
+                                        cursor: isCheckingStatus
+                                            ? "wait"
+                                            : "pointer",
+                                        flex: 1,
+                                    }}
+                                    onClick={handleWatchedClick}
+                                >
+                                    <CheckIcon width="20" height="20" />
+                                    <Text size="2" ml="2">
+                                        {isCheckingStatus
+                                            ? "Loading..."
+                                            : isWatched
+                                            ? "Watched"
+                                            : "Mark as Watched"}
+                                    </Text>
+                                </IconButton>
+                            </Flex>
                         </Flex>
                     </Flex>
-                </Box>
-            )}
-        </Card>
+                </Dialog.Content>
+            </Dialog.Root>
+        </>
     );
 }

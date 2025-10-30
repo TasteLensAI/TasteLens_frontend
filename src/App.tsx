@@ -7,6 +7,8 @@ import {
     NotFoundPage,
     LoginPage,
     DashboardPage,
+    WatchlistPage,
+    WatchedPage,
 } from "./pages";
 import { ApiProvider } from "./contexts/ApiContext";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -58,6 +60,22 @@ export default function App() {
                                 element={
                                     <ProtectedRoute>
                                         <MoviesPage />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/watchlist"
+                                element={
+                                    <ProtectedRoute>
+                                        <WatchlistPage />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/watched"
+                                element={
+                                    <ProtectedRoute>
+                                        <WatchedPage />
                                     </ProtectedRoute>
                                 }
                             />

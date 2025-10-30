@@ -6,17 +6,28 @@ import {
     Button,
     TextField,
 } from "@radix-ui/themes";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { MovieCard } from "./MovieCard";
 import { useApi } from "../contexts/ApiContext";
+import { useAuth } from "../contexts/AuthContext";
 import type { MoviesResponse } from "../types/movie";
 
 interface MoviesGridProps {
-    selectedGenres: string[];
+    selectedGenres?: string[];
+    endpoint?: string;
+    title?: string;
+    emptyStateMessage?: string;
+    emptyStateIcon?: string;
 }
 
-export function MoviesGrid({ selectedGenres }: MoviesGridProps) {
+export function MoviesGrid({
+    selectedGenres = [],
+    endpoint = "/movies",
+    title,
+    emptyStateMessage,
+    emptyStateIcon = "🎬",
+}: MoviesGridProps) {
     const [moviesData, setMoviesData] = useState<MoviesResponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -25,22 +36,34 @@ export function MoviesGrid({ selectedGenres }: MoviesGridProps) {
     const [searchInput, setSearchInput] = useState("");
 
     const { getEndpoint } = useApi();
+    const { token } = useAuth();
     const limit = 20; // Movies per page
 
+    // Determine if this endpoint requires authentication
+    const requiresAuth = endpoint === "/wishlist" || endpoint === "/watched";
+
     // Normalize movie data to ensure genres is always an array
-    const normalizeMovies = (data: MoviesResponse): MoviesResponse => {
-        return {
-            ...data,
-            movies: data.movies.map((movie) => ({
-                ...movie,
-                // Genres is already a string from API, no need to normalize
-            })),
-        };
-    };
+    const normalizeMovies = useCallback(
+        (data: MoviesResponse): MoviesResponse => {
+            return {
+                ...data,
+                movies: data.movies.map((movie) => ({
+                    ...movie,
+                    // Genres is already a string from API, no need to normalize
+                })),
+            };
+        },
+        []
+    );
 
     // Fetch movies whenever selectedGenres, currentPage, or searchQuery changes
     useEffect(() => {
         const fetchMovies = async () => {
+            if (requiresAuth && !token) {
+                setError("You must be logged in to view this page");
+                return;
+            }
+
             try {
                 setIsLoading(true);
                 setError(null);
@@ -51,8 +74,8 @@ export function MoviesGrid({ selectedGenres }: MoviesGridProps) {
                     limit: limit.toString(),
                 });
 
-                // Add genres if any are selected
-                if (selectedGenres.length > 0) {
+                // Add genres if any are selected (only for /movies endpoint)
+                if (endpoint === "/movies" && selectedGenres.length > 0) {
                     selectedGenres.forEach((genre) => {
                         params.append("genres", genre);
                     });
@@ -63,8 +86,17 @@ export function MoviesGrid({ selectedGenres }: MoviesGridProps) {
                     params.append("search", searchQuery.trim());
                 }
 
+                const headers: HeadersInit = {
+                    "Content-Type": "application/json",
+                };
+
+                if (requiresAuth && token) {
+                    headers["Authorization"] = `Bearer ${token}`;
+                }
+
                 const response = await fetch(
-                    `${getEndpoint("/movies")}?${params.toString()}`
+                    `${getEndpoint(endpoint)}?${params.toString()}`,
+                    { headers }
                 );
 
                 if (!response.ok) {
@@ -94,7 +126,18 @@ export function MoviesGrid({ selectedGenres }: MoviesGridProps) {
         };
 
         fetchMovies();
-    }, [selectedGenres, currentPage, searchQuery, getEndpoint]);
+    }, [
+        currentPage,
+        searchQuery,
+        endpoint,
+        token,
+        requiresAuth,
+        normalizeMovies,
+        getEndpoint,
+        // Use JSON.stringify for array to avoid reference issues
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        JSON.stringify(selectedGenres),
+    ]);
 
     // Reset to page 1 when genres or search changes
     useEffect(() => {
@@ -141,7 +184,9 @@ export function MoviesGrid({ selectedGenres }: MoviesGridProps) {
                 {/* Title */}
                 <Flex direction="column" gap="2">
                     <Heading size="6">
-                        {selectedGenres.length === 0
+                        {title
+                            ? title
+                            : selectedGenres.length === 0
                             ? "All Movies"
                             : selectedGenres.length === 1
                             ? formatGenreName(selectedGenres[0])
@@ -161,7 +206,13 @@ export function MoviesGrid({ selectedGenres }: MoviesGridProps) {
                 {/* Search Bar */}
                 <Flex gap="2" align="center">
                     <TextField.Root
-                        placeholder="Search movies by title, director, or genre..."
+                        placeholder={
+                            endpoint === "/wishlist"
+                                ? "Search your watchlist..."
+                                : endpoint === "/watched"
+                                ? "Search watched movies..."
+                                : "Search movies by title, director, or genre..."
+                        }
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
                         onKeyPress={handleKeyPress}
@@ -286,15 +337,19 @@ export function MoviesGrid({ selectedGenres }: MoviesGridProps) {
                             gap="3"
                             style={{ minHeight: "400px" }}
                         >
-                            <Text size="6">🎬</Text>
+                            <Text size="6">{emptyStateIcon}</Text>
                             <Text size="4" weight="medium" color="gray">
-                                No movies found
+                                {emptyStateMessage || "No movies found"}
                             </Text>
                             <Text size="2" color="gray">
                                 {selectedGenres.length > 0
                                     ? "Try selecting fewer genres or adjusting your search"
                                     : searchQuery
                                     ? "Try a different search query"
+                                    : endpoint === "/wishlist"
+                                    ? "Start adding movies you want to watch!"
+                                    : endpoint === "/watched"
+                                    ? "Start marking movies as watched!"
                                     : "No movies available"}
                             </Text>
                         </Flex>

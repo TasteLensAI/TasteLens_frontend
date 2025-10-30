@@ -27,7 +27,6 @@ export function DashboardPage() {
             icon: <BookmarkIcon width="32" height="32" />,
             path: "/watchlist",
             color: "var(--blue-9)",
-            comingSoon: true,
         },
         {
             id: "watched",
@@ -36,7 +35,6 @@ export function DashboardPage() {
             icon: <CheckCircledIcon width="32" height="32" />,
             path: "/watched",
             color: "var(--green-9)",
-            comingSoon: true,
         },
     ];
 
@@ -123,33 +121,24 @@ export function DashboardPage() {
                                 key={item.id}
                                 style={{
                                     width: "340px",
-                                    cursor: item.comingSoon
-                                        ? "not-allowed"
-                                        : "pointer",
+                                    cursor: "pointer",
                                     transition: "all 0.3s ease",
                                     position: "relative",
-                                    opacity: item.comingSoon ? 0.6 : 1,
                                 }}
                                 onClick={() => {
-                                    if (!item.comingSoon) {
-                                        navigate(item.path);
-                                    }
+                                    navigate(item.path);
                                 }}
                                 onMouseEnter={(e) => {
-                                    if (!item.comingSoon) {
-                                        e.currentTarget.style.transform =
-                                            "translateY(-4px)";
-                                        e.currentTarget.style.boxShadow =
-                                            "var(--shadow-5)";
-                                    }
+                                    e.currentTarget.style.transform =
+                                        "translateY(-4px)";
+                                    e.currentTarget.style.boxShadow =
+                                        "var(--shadow-5)";
                                 }}
                                 onMouseLeave={(e) => {
-                                    if (!item.comingSoon) {
-                                        e.currentTarget.style.transform =
-                                            "translateY(0)";
-                                        e.currentTarget.style.boxShadow =
-                                            "var(--shadow-3)";
-                                    }
+                                    e.currentTarget.style.transform =
+                                        "translateY(0)";
+                                    e.currentTarget.style.boxShadow =
+                                        "var(--shadow-3)";
                                 }}
                             >
                                 <Flex
@@ -179,28 +168,6 @@ export function DashboardPage() {
                                             {item.description}
                                         </Text>
                                     </Flex>
-
-                                    {/* Coming Soon Badge */}
-                                    {item.comingSoon && (
-                                        <Box
-                                            style={{
-                                                position: "absolute",
-                                                top: "var(--space-4)",
-                                                right: "var(--space-4)",
-                                                backgroundColor:
-                                                    "var(--amber-9)",
-                                                color: "white",
-                                                padding:
-                                                    "var(--space-1) var(--space-3)",
-                                                borderRadius: "var(--radius-2)",
-                                                fontSize: "var(--font-size-1)",
-                                                fontWeight:
-                                                    "var(--font-weight-bold)",
-                                            }}
-                                        >
-                                            Coming Soon
-                                        </Box>
-                                    )}
                                 </Flex>
                             </Card>
                         ))}
