@@ -1,35 +1,68 @@
 import { Flex, Box } from "@radix-ui/themes";
-import { Routes, Route, useLocation } from "react-router-dom";
-import { Navigation } from "./components/Navigation";
-import { HomePage, MoviesPage, NotFoundPage, LoginPage } from "./pages";
+import { Routes, Route } from "react-router-dom";
+// import { Navigation } from "./components/Navigation";
+import {
+    HomePage,
+    MoviesPage,
+    NotFoundPage,
+    LoginPage,
+    DashboardPage,
+} from "./pages";
 import { ApiProvider } from "./contexts/ApiContext";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 export default function App() {
-    const location = useLocation();
+    // const location = useLocation();
 
     // Extract current page from pathname
-    const getCurrentPage = () => {
-        const path = location.pathname;
-        if (path === "/") return "home";
-        if (path === "/movies") return "movies";
-        if (path === "/login") return "login";
-        return "home";
-    };
+    // const getCurrentPage = () => {
+    //     const path = location.pathname;
+    //     if (path === "/") return "home";
+    //     if (path === "/movies") return "movies";
+    //     if (path === "/login") return "login";
+    //     return "home";
+    // };
+
+    // Only show navigation on public routes
+    // const showNavigation =
+    //     location.pathname === "/" || location.pathname === "/login";
 
     return (
         <ApiProvider>
             <AuthProvider>
                 <Flex direction="column" style={{ minHeight: "100vh" }}>
-                    {/* Navigation Bar */}
-                    <Navigation currentPage={getCurrentPage()} />
+                    {/* Navigation Bar - Only on public routes */}
+                    {/* {showNavigation && (
+                        <Navigation currentPage={getCurrentPage()} />
+                    )} */}
 
                     {/* Page Content */}
                     <Box style={{ flex: "1" }}>
                         <Routes>
+                            {/* Public Routes */}
                             <Route path="/" element={<HomePage />} />
-                            <Route path="/movies" element={<MoviesPage />} />
                             <Route path="/login" element={<LoginPage />} />
+
+                            {/* Protected Routes */}
+                            <Route
+                                path="/dashboard"
+                                element={
+                                    <ProtectedRoute>
+                                        <DashboardPage />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/movies"
+                                element={
+                                    <ProtectedRoute>
+                                        <MoviesPage />
+                                    </ProtectedRoute>
+                                }
+                            />
+
+                            {/* 404 */}
                             <Route path="*" element={<NotFoundPage />} />
                         </Routes>
                     </Box>

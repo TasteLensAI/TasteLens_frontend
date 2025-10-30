@@ -166,7 +166,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const refreshTokenValue = tokenStorage.getRefreshToken();
 
         if (!refreshTokenValue) {
-            logout();
+            // No refresh token available, but don't logout - let token naturally expire
             return false;
         }
 
@@ -264,6 +264,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             if (response.ok) {
                 const data = await response.json();
+
+                // If registration returns a token, log the user in automatically
+                if (data.token && data.user) {
+                    setToken(data.token);
+                    setUser(data.user);
+
+                    tokenStorage.setToken(data.token);
+                    tokenStorage.setUser(data.user);
+
+                    if (data.refresh_token) {
+                        tokenStorage.setRefreshToken(data.refresh_token);
+                    }
+                }
+
                 return {
                     success: true,
                     message: data.message || "Registration successful!",

@@ -1,17 +1,41 @@
-import { Box, Flex, Text, Heading, ScrollArea } from "@radix-ui/themes";
-import type { MovieCategory } from "../types/movie";
+import { Flex, Text, Heading, ScrollArea, Checkbox } from "@radix-ui/themes";
+import type { Genre } from "../types/movie";
 
 interface CategorySidebarProps {
-    categories: MovieCategory[];
-    selectedCategory: string | null;
-    onCategorySelect: (categoryName: string | null) => void;
+    genres: Genre[];
+    totalMovies: number;
+    selectedGenres: string[];
+    onGenresChange: (genres: string[]) => void;
 }
 
 export function CategorySidebar({
-    categories,
-    selectedCategory,
-    onCategorySelect,
+    genres,
+    totalMovies,
+    selectedGenres,
+    onGenresChange,
 }: CategorySidebarProps) {
+    // Capitalize first letter of each word in genre name
+    const formatGenreName = (genre: string) => {
+        return genre
+            .split(" ")
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ");
+    };
+
+    const handleGenreToggle = (genre: string) => {
+        if (selectedGenres.includes(genre)) {
+            // Remove genre from selection
+            onGenresChange(selectedGenres.filter((g) => g !== genre));
+        } else {
+            // Add genre to selection
+            onGenresChange([...selectedGenres, genre]);
+        }
+    };
+
+    const handleClearAll = () => {
+        onGenresChange([]);
+    };
+
     return (
         <Flex
             direction="column"
@@ -22,100 +46,147 @@ export function CategorySidebar({
                 backgroundColor: "var(--gray-2)",
             }}
         >
-            <Box p="4" style={{ flexShrink: 0 }}>
-                {" "}
-                {/* Header - don't shrink */}
-                <Heading size="4" mb="4">
-                    Categories
-                </Heading>
-                {/* "All Movies" option */}
-                <Box
-                    onClick={() => onCategorySelect(null)}
-                    style={{
-                        padding: "var(--space-3)",
-                        borderRadius: "var(--radius-2)",
-                        cursor: "pointer",
-                        backgroundColor:
-                            selectedCategory === null
-                                ? "var(--accent-9)"
-                                : "transparent",
-                        color:
-                            selectedCategory === null
-                                ? "var(--accent-contrast)"
-                                : "var(--gray-11)",
-                        marginBottom: "var(--space-2)",
-                        transition: "all 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                        if (selectedCategory !== null) {
-                            e.currentTarget.style.backgroundColor =
-                                "var(--gray-4)";
-                        }
-                    }}
-                    onMouseLeave={(e) => {
-                        if (selectedCategory !== null) {
-                            e.currentTarget.style.backgroundColor =
-                                "transparent";
-                        }
-                    }}
-                >
-                    <Flex align="center" gap="2">
-                        <Text size="2" weight="medium">
-                            🎬 All Movies
+            <Flex
+                direction="column"
+                gap="4"
+                style={{ flexShrink: 0, margin: "var(--space-4)" }}
+            >
+                {/* Header */}
+                <Flex justify="between" align="center">
+                    <Heading size="4">Genres</Heading>
+                    {selectedGenres.length > 0 && (
+                        <Text
+                            size="2"
+                            color="blue"
+                            style={{ cursor: "pointer" }}
+                            onClick={handleClearAll}
+                        >
+                            Clear all
                         </Text>
-                    </Flex>
-                </Box>
-                <ScrollArea
+                    )}
+                </Flex>
+
+                {/* Selected count info */}
+                <Flex
+                    direction="column"
+                    gap="1"
                     style={{
-                        flex: "1", // Take remaining space
-                        paddingRight: "var(--space-2)",
+                        backgroundColor: "var(--accent-3)",
+                        borderRadius: "var(--radius-2)",
+                        border: "1px solid var(--accent-6)",
+                        padding: "var(--space-3)",
                     }}
                 >
-                    <Flex direction="column" gap="1">
-                        {categories.map((category) => (
-                            <Box
-                                key={category.name}
-                                onClick={() => onCategorySelect(category.name)}
+                    <Text size="2" weight="bold" color="gray">
+                        {selectedGenres.length === 0
+                            ? "All Movies"
+                            : `${selectedGenres.length} Genre${
+                                  selectedGenres.length > 1 ? "s" : ""
+                              } Selected`}
+                    </Text>
+                    <Text size="1" color="gray">
+                        {selectedGenres.length === 0
+                            ? `${totalMovies.toLocaleString()} total movies`
+                            : `Showing movies with ${
+                                  selectedGenres.length > 1 ? "all" : "this"
+                              } genre${selectedGenres.length > 1 ? "s" : ""}`}
+                    </Text>
+                </Flex>
+            </Flex>
+
+            {/* Scrollable genre checklist */}
+            <ScrollArea
+                style={{
+                    flex: "1", // Take remaining space
+                }}
+            >
+                <Flex
+                    direction="column"
+                    gap="1"
+                    style={{
+                        margin: "0 var(--space-4) var(--space-4) var(--space-4)",
+                    }}
+                >
+                    {genres.map((genreItem) => {
+                        const isSelected = selectedGenres.includes(
+                            genreItem.genre
+                        );
+
+                        return (
+                            <Flex
+                                key={genreItem.genre}
+                                align="center"
+                                gap="3"
+                                onClick={() =>
+                                    handleGenreToggle(genreItem.genre)
+                                }
                                 style={{
                                     padding: "var(--space-3)",
                                     borderRadius: "var(--radius-2)",
                                     cursor: "pointer",
-                                    backgroundColor:
-                                        selectedCategory === category.name
-                                            ? "var(--accent-9)"
-                                            : "transparent",
-                                    color:
-                                        selectedCategory === category.name
-                                            ? "var(--accent-contrast)"
-                                            : "var(--gray-11)",
+                                    backgroundColor: isSelected
+                                        ? "var(--accent-4)"
+                                        : "transparent",
+                                    border: isSelected
+                                        ? "1px solid var(--accent-7)"
+                                        : "1px solid transparent",
                                     transition: "all 0.2s ease",
                                 }}
                                 onMouseEnter={(e) => {
-                                    if (selectedCategory !== category.name) {
+                                    if (!isSelected) {
                                         e.currentTarget.style.backgroundColor =
                                             "var(--gray-4)";
                                     }
                                 }}
                                 onMouseLeave={(e) => {
-                                    if (selectedCategory !== category.name) {
+                                    if (!isSelected) {
                                         e.currentTarget.style.backgroundColor =
                                             "transparent";
                                     }
                                 }}
                             >
-                                <Flex align="center" justify="between">
-                                    <Text size="2" weight="medium">
-                                        {category.name}
+                                <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={() =>
+                                        handleGenreToggle(genreItem.genre)
+                                    }
+                                    style={{
+                                        cursor: "pointer",
+                                        flexShrink: 0,
+                                    }}
+                                />
+                                <Flex
+                                    justify="between"
+                                    align="center"
+                                    style={{ flex: 1, minWidth: 0 }}
+                                >
+                                    <Text
+                                        size="2"
+                                        weight={isSelected ? "bold" : "medium"}
+                                        style={{
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap",
+                                        }}
+                                    >
+                                        {formatGenreName(genreItem.genre)}
                                     </Text>
-                                    <Text size="1" color="gray">
-                                        {category.movies.length}
+                                    <Text
+                                        size="1"
+                                        color="gray"
+                                        style={{
+                                            flexShrink: 0,
+                                            marginLeft: "var(--space-2)",
+                                        }}
+                                    >
+                                        {genreItem.count.toLocaleString()}
                                     </Text>
                                 </Flex>
-                            </Box>
-                        ))}
-                    </Flex>
-                </ScrollArea>
-            </Box>
+                            </Flex>
+                        );
+                    })}
+                </Flex>
+            </ScrollArea>
         </Flex>
     );
 }

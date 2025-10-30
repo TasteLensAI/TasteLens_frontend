@@ -47,6 +47,53 @@ export function HomePage() {
                     </Text>
                 </Flex>
 
+                {/* Getting Started */}
+                <Card
+                    style={{
+                        padding: "var(--space-5)",
+                        backgroundColor: "var(--accent-2)",
+                        width: "100%",
+                    }}
+                >
+                    <Flex
+                        direction="column"
+                        align="center"
+                        gap="3"
+                        style={{ textAlign: "center" }}
+                    >
+                        <Heading size="6" style={{ color: "var(--accent-11)" }}>
+                            Ready to Discover Your Next Favorite Movie?
+                        </Heading>
+                        <Text color="gray" style={{ lineHeight: "1.6" }}>
+                            Start exploring our movie collections and let
+                            TasteLens guide you to cinematic experiences
+                            perfectly matched to your taste.
+                        </Text>
+
+                        <Flex gap="3" mt="3">
+                            <Button
+                                size="3"
+                                onClick={handleLoginClick}
+                                style={{
+                                    backgroundColor: "var(--accent-9)",
+                                    color: "white",
+                                }}
+                            >
+                                Sign In / Create Account
+                            </Button>
+                        </Flex>
+
+                        <Text
+                            size="2"
+                            color="gray"
+                            style={{ marginTop: "var(--space-2)" }}
+                        >
+                            Already have an account? Sign in to get personalized
+                            recommendations!
+                        </Text>
+                    </Flex>
+                </Card>
+
                 {/* Feature Cards */}
                 <Flex direction="column" gap="4" style={{ width: "100%" }}>
                     <Card style={{ padding: "var(--space-5)" }}>
@@ -101,53 +148,6 @@ export function HomePage() {
                         </Flex>
                     </Card>
                 </Flex>
-
-                {/* Getting Started */}
-                <Card
-                    style={{
-                        padding: "var(--space-5)",
-                        backgroundColor: "var(--accent-2)",
-                        width: "100%",
-                    }}
-                >
-                    <Flex
-                        direction="column"
-                        align="center"
-                        gap="3"
-                        style={{ textAlign: "center" }}
-                    >
-                        <Heading size="6" style={{ color: "var(--accent-11)" }}>
-                            Ready to Discover Your Next Favorite Movie?
-                        </Heading>
-                        <Text color="gray" style={{ lineHeight: "1.6" }}>
-                            Start exploring our movie collections and let
-                            TasteLens guide you to cinematic experiences
-                            perfectly matched to your taste.
-                        </Text>
-
-                        <Flex gap="3" mt="3">
-                            <Button
-                                size="3"
-                                onClick={handleLoginClick}
-                                style={{
-                                    backgroundColor: "var(--accent-9)",
-                                    color: "white",
-                                }}
-                            >
-                                Sign In / Create Account
-                            </Button>
-                        </Flex>
-
-                        <Text
-                            size="2"
-                            color="gray"
-                            style={{ marginTop: "var(--space-2)" }}
-                        >
-                            Already have an account? Sign in to get personalized
-                            recommendations!
-                        </Text>
-                    </Flex>
-                </Card>
             </Flex>
         </Box>
     );

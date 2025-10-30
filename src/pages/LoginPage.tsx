@@ -31,7 +31,7 @@ const LoginForm: React.FC = () => {
 
             if (result.success) {
                 alert("Login successful! Welcome back!");
-                navigate("/"); // Redirect to home page
+                navigate("/dashboard"); // Redirect to dashboard after login
             } else {
                 alert(`Login failed: ${result.message}`);
             }
@@ -107,6 +107,7 @@ const LoginForm: React.FC = () => {
 
 const RegistrationForm: React.FC = () => {
     const { register } = useAuth();
+    const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (data: FormData) => {
@@ -126,8 +127,8 @@ const RegistrationForm: React.FC = () => {
             const result = await register(userData);
 
             if (result.success) {
-                alert("Registration successful! You can now log in.");
-                // Optionally switch to login tab or redirect
+                alert("Registration successful! Welcome to TasteLens!");
+                navigate("/dashboard"); // Redirect to dashboard after registration
             } else {
                 alert(`Registration failed: ${result.message}`);
             }

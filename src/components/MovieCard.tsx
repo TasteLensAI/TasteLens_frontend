@@ -1,5 +1,6 @@
-import { Card, Flex, Text, Badge, Box } from "@radix-ui/themes";
-import { useState } from "react";
+import { Card, Flex, Text, Badge, Box, IconButton } from "@radix-ui/themes";
+import { useState, useEffect, useRef } from "react";
+import { BookmarkIcon, CheckIcon, ImageIcon } from "@radix-ui/react-icons";
 import type { Movie } from "../types/movie";
 
 interface MovieCardProps {
@@ -26,6 +27,8 @@ function MovieCardImage({
     defaultSizeRatio = 85,
 }: MovieCardImageProps) {
     const activeSizeRatio = 100 - defaultSizeRatio;
+    const hasValidImage = coverImage && !coverImage.includes("placeholder");
+
     return (
         <Box
             style={{
@@ -34,18 +37,36 @@ function MovieCardImage({
                     : `1 0 ${defaultSizeRatio}%`, // Not hovered: large (85%)
                 transition: "flex 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
                 overflow: "hidden",
+                backgroundColor: "var(--gray-5)",
             }}
         >
-            <img
-                src={coverImage}
-                alt={alt}
-                style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    backgroundColor: "var(--gray-5)",
-                }}
-            />
+            {hasValidImage ? (
+                <img
+                    src={coverImage}
+                    alt={alt}
+                    style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                    }}
+                />
+            ) : (
+                <Flex
+                    align="center"
+                    justify="center"
+                    style={{
+                        width: "100%",
+                        height: "100%",
+                        backgroundColor: "var(--gray-4)",
+                    }}
+                >
+                    <ImageIcon
+                        width="64"
+                        height="64"
+                        style={{ color: "var(--gray-8)" }}
+                    />
+                </Flex>
+            )}
         </Box>
     );
 }
@@ -56,6 +77,22 @@ function MovieCardContent({
     defaultSizeRatio = 15,
 }: MovieCardContentProps) {
     const activeSizeRatio = 100 - defaultSizeRatio;
+
+    // Format duration from minutes to hours and minutes
+    const formatDuration = (minutes: number) => {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+    };
+
+    // Parse genres string to array
+    const genresArray = movie.genres
+        ? movie.genres
+              .split("|")
+              .map((g) => g.trim())
+              .filter((g) => g)
+        : [];
+
     return (
         <Box
             p="4"
@@ -75,7 +112,7 @@ function MovieCardContent({
                     {movie.title}
                 </Text>
                 <Text size="2" color="gray">
-                    {movie.year} • {movie.duration}
+                    {movie.year} • {formatDuration(movie.duration)}
                 </Text>
             </Flex>
 
@@ -84,32 +121,43 @@ function MovieCardContent({
                 <Flex direction="column" gap="3" style={{ flex: "1" }}>
                     <Flex align="center" gap="2">
                         <Badge color="gold" variant="soft">
-                            ⭐ {movie.imdbRating}
+                            ⭐ {movie.tmdbRating.toFixed(1)}
                         </Badge>
                         <Text size="1" color="gray">
-                            IMDB
+                            ({movie.tmdbVoteCount.toLocaleString()} votes)
                         </Text>
                     </Flex>
 
-                    <Box>
-                        <Text size="2" weight="bold" mb="1">
-                            Genres
-                        </Text>
-                        <Flex wrap="wrap" gap="1">
-                            {movie.genres.map((genre) => (
-                                <Badge key={genre} variant="outline" size="1">
-                                    {genre}
-                                </Badge>
-                            ))}
-                        </Flex>
-                    </Box>
+                    {genresArray.length > 0 && (
+                        <Box>
+                            <Text size="2" weight="bold" mb="1">
+                                Genres
+                            </Text>
+                            <Flex wrap="wrap" gap="1">
+                                {genresArray.map((genre, index) => (
+                                    <Badge
+                                        key={`${genre}-${index}`}
+                                        variant="outline"
+                                        size="1"
+                                    >
+                                        {genre}
+                                    </Badge>
+                                ))}
+                            </Flex>
+                        </Box>
+                    )}
 
-                    <Box>
-                        <Text size="2" color="gray">
-                            <Text weight="bold">Director:</Text>{" "}
-                            {movie.director}
-                        </Text>
-                    </Box>
+                    {movie.tagline && (
+                        <Box>
+                            <Text
+                                size="2"
+                                color="gray"
+                                style={{ fontStyle: "italic" }}
+                            >
+                                "{movie.tagline}"
+                            </Text>
+                        </Box>
+                    )}
 
                     <Box style={{ flex: "1" }}>
                         <Text
@@ -117,9 +165,10 @@ function MovieCardContent({
                             color="gray"
                             style={{ lineHeight: "1.4" }}
                         >
-                            {movie.description.length > 100
+                            {movie.description && movie.description.length > 100
                                 ? `${movie.description.substring(0, 100)}...`
-                                : movie.description}
+                                : movie.description ||
+                                  "No description available"}
                         </Text>
                     </Box>
                 </Flex>
@@ -130,12 +179,58 @@ function MovieCardContent({
 
 export function MovieCard({ movie }: MovieCardProps) {
     const [isHovered, setIsHovered] = useState(false);
+    const [isClicked, setIsClicked] = useState(false);
+    const [isInWatchlist, setIsInWatchlist] = useState(false);
+    const [isWatched, setIsWatched] = useState(false);
+    const cardRef = useRef<HTMLDivElement>(null);
 
     const bigRatio = 80;
     const smallRatio = 100 - bigRatio;
 
+    // Build poster URL from poster_path
+    const posterUrl = movie.poster_path
+        ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+        : "";
+
+    // Close overlay when clicking outside the card
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                cardRef.current &&
+                !cardRef.current.contains(event.target as Node)
+            ) {
+                setIsClicked(false);
+            }
+        };
+
+        if (isClicked) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isClicked]);
+
+    const handleCardClick = () => {
+        setIsClicked(!isClicked);
+    };
+
+    const handleWatchlistClick = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent card click event
+        setIsInWatchlist(!isInWatchlist);
+        console.log(`${movie.title} - Watchlist toggled:`, !isInWatchlist);
+    };
+
+    const handleWatchedClick = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent card click event
+        setIsWatched(!isWatched);
+        console.log(`${movie.title} - Watched toggled:`, !isWatched);
+    };
+
     return (
         <Card
+            ref={cardRef}
             size="1"
             style={{
                 width: "250px",
@@ -145,15 +240,17 @@ export function MovieCard({ movie }: MovieCardProps) {
                 transition: "all 0.3s ease",
                 transform: isHovered ? "translateY(-8px)" : "translateY(0)",
                 boxShadow: isHovered ? "var(--shadow-6)" : "var(--shadow-3)",
+                position: "relative",
             }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
+            onClick={handleCardClick}
         >
             <Flex direction="column" height="100%">
                 {/* Image Section */}
                 <MovieCardImage
                     alt={`${movie.title} poster`}
-                    coverImage={movie.coverImage}
+                    coverImage={posterUrl}
                     isHovered={isHovered}
                     defaultSizeRatio={bigRatio}
                 />
@@ -165,6 +262,99 @@ export function MovieCard({ movie }: MovieCardProps) {
                     defaultSizeRatio={smallRatio}
                 />
             </Flex>
+
+            {/* Purple Overlay with Action Buttons */}
+            {isClicked && (
+                <Box
+                    style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: "rgba(110, 86, 207, 0)", // Start transparent
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "var(--space-4)",
+                        animation:
+                            "overlayFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards",
+                        zIndex: 10,
+                    }}
+                >
+                    <Flex
+                        direction="column"
+                        gap="6"
+                        align="center"
+                        style={{
+                            animation:
+                                "buttonsSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards",
+                            opacity: 0,
+                            transform: "translateY(20px)",
+                        }}
+                    >
+                        {/* Watchlist Button */}
+                        <Flex direction="column" align="center" gap="2">
+                            <IconButton
+                                size="4"
+                                variant={isInWatchlist ? "solid" : "soft"}
+                                color={isInWatchlist ? "green" : "gray"}
+                                radius="full"
+                                style={{
+                                    width: "80px",
+                                    height: "80px",
+                                    cursor: "pointer",
+                                    backgroundColor: isInWatchlist
+                                        ? "var(--green-9)"
+                                        : "rgba(255, 255, 255, 0.2)",
+                                    transition: "all 0.3s ease",
+                                }}
+                                onClick={handleWatchlistClick}
+                            >
+                                <BookmarkIcon width="32" height="32" />
+                            </IconButton>
+                            <Text
+                                size="3"
+                                weight="bold"
+                                style={{ color: "white" }}
+                            >
+                                {isInWatchlist
+                                    ? "In Watchlist"
+                                    : "Add to Watchlist"}
+                            </Text>
+                        </Flex>
+
+                        {/* Watched Button */}
+                        <Flex direction="column" align="center" gap="2">
+                            <IconButton
+                                size="4"
+                                variant={isWatched ? "solid" : "soft"}
+                                color={isWatched ? "blue" : "gray"}
+                                radius="full"
+                                style={{
+                                    width: "80px",
+                                    height: "80px",
+                                    cursor: "pointer",
+                                    backgroundColor: isWatched
+                                        ? "var(--blue-9)"
+                                        : "rgba(255, 255, 255, 0.2)",
+                                    transition: "all 0.3s ease",
+                                }}
+                                onClick={handleWatchedClick}
+                            >
+                                <CheckIcon width="32" height="32" />
+                            </IconButton>
+                            <Text
+                                size="3"
+                                weight="bold"
+                                style={{ color: "white" }}
+                            >
+                                {isWatched ? "Watched" : "Mark as Watched"}
+                            </Text>
+                        </Flex>
+                    </Flex>
+                </Box>
+            )}
         </Card>
     );
 }
