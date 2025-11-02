@@ -9,6 +9,7 @@ import {
     DashboardPage,
     WatchlistPage,
     WatchedPage,
+    RecommendationsPage,
 } from "./pages";
 import { ApiProvider } from "./contexts/ApiContext";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -76,6 +77,14 @@ export default function App() {
                                 element={
                                     <ProtectedRoute>
                                         <WatchedPage />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/recommendations"
+                                element={
+                                    <ProtectedRoute>
+                                        <RecommendationsPage />
                                     </ProtectedRoute>
                                 }
                             />

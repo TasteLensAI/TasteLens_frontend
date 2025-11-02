@@ -5,6 +5,7 @@ import {
     MagnifyingGlassIcon,
     BookmarkIcon,
     CheckCircledIcon,
+    RocketIcon,
 } from "@radix-ui/react-icons";
 
 export function DashboardPage() {
@@ -19,6 +20,14 @@ export function DashboardPage() {
             icon: <MagnifyingGlassIcon width="32" height="32" />,
             path: "/movies",
             color: "var(--violet-9)",
+        },
+        {
+            id: "recommendations",
+            title: "Personalized Recommendations",
+            description: "Discover movies tailored to your taste",
+            icon: <RocketIcon width="32" height="32" />,
+            path: "/recommendations",
+            color: "var(--orange-9)",
         },
         {
             id: "watchlist",

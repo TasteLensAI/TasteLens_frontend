@@ -6,3 +6,4 @@ export { default as LoginPage } from './LoginPage';
 export { DashboardPage } from './DashboardPage';
 export { WatchlistPage } from './WatchlistPage';
 export { WatchedPage } from './WatchedPage';
+export { RecommendationsPage } from './RecommendationsPage';
