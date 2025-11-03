@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     Container,
     Heading,
@@ -25,6 +25,8 @@ export function RecommendationsPage() {
     const [userMovieCount, setUserMovieCount] = useState<number | null>(null);
     const [showOnboardingPrompt, setShowOnboardingPrompt] = useState(false);
 
+    const hasInitialized = useRef(false);
+
     const { getEndpoint } = useApi();
     const { token } = useAuth();
 
@@ -33,7 +35,9 @@ export function RecommendationsPage() {
     // Check user's movie count on mount
     useEffect(() => {
         const checkUserMovieCount = async () => {
-            if (!token) return;
+            if (!token || hasInitialized.current) return;
+
+            hasInitialized.current = true;
 
             try {
                 // Fetch both watchlist and watched counts
@@ -69,7 +73,6 @@ export function RecommendationsPage() {
 
         checkUserMovieCount();
     }, [token, getEndpoint]);
-
     const loadOnboardingMovies = async () => {
         if (!token) return;
 
@@ -84,7 +87,15 @@ export function RecommendationsPage() {
 
             if (response.ok) {
                 const data = await response.json();
+                console.log("Onboarding response:", data);
                 setOnboardingMovies(data.movies || []);
+            } else {
+                const errorData = await response.text();
+                console.error(
+                    "Error loading onboarding movies:",
+                    response.status,
+                    errorData
+                );
             }
         } catch (error) {
             console.error("Error loading onboarding movies:", error);
@@ -94,7 +105,7 @@ export function RecommendationsPage() {
     };
 
     const loadRecommendations = async () => {
-        if (!token) return;
+        if (!token || isLoading) return;
 
         setIsLoading(true);
         try {
@@ -107,7 +118,15 @@ export function RecommendationsPage() {
 
             if (response.ok) {
                 const data = await response.json();
+                console.log("Recommendations response:", data);
                 setRecommendations(data.movies || []);
+            } else {
+                const errorData = await response.text();
+                console.error(
+                    "Error loading recommendations:",
+                    response.status,
+                    errorData
+                );
             }
         } catch (error) {
             console.error("Error loading recommendations:", error);

@@ -10,10 +10,10 @@ import { useApi } from "./ApiContext";
 
 // Types
 interface User {
-    id: string;
+    id: number;
     username: string;
     email: string;
-    displayName?: string;
+    display_name?: string;
 }
 
 interface AuthContextType {

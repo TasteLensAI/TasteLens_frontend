@@ -1,6 +1,6 @@
 import { Flex, Box } from "@radix-ui/themes";
-import { Routes, Route } from "react-router-dom";
-// import { Navigation } from "./components/Navigation";
+import { Routes, Route, useLocation } from "react-router-dom";
+import { AuthenticatedNav } from "./components/AuthenticatedNav";
 import {
     HomePage,
     MoviesPage,
@@ -16,29 +16,24 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 export default function App() {
-    // const location = useLocation();
+    const location = useLocation();
 
-    // Extract current page from pathname
-    // const getCurrentPage = () => {
-    //     const path = location.pathname;
-    //     if (path === "/") return "home";
-    //     if (path === "/movies") return "movies";
-    //     if (path === "/login") return "login";
-    //     return "home";
-    // };
-
-    // Only show navigation on public routes
-    // const showNavigation =
-    //     location.pathname === "/" || location.pathname === "/login";
+    // Check if current route is protected
+    const protectedRoutes = [
+        "/dashboard",
+        "/movies",
+        "/recommendations",
+        "/watchlist",
+        "/watched",
+    ];
+    const isProtectedRoute = protectedRoutes.includes(location.pathname);
 
     return (
         <ApiProvider>
             <AuthProvider>
                 <Flex direction="column" style={{ minHeight: "100vh" }}>
-                    {/* Navigation Bar - Only on public routes */}
-                    {/* {showNavigation && (
-                        <Navigation currentPage={getCurrentPage()} />
-                    )} */}
+                    {/* Navigation Bar - Only on protected routes */}
+                    {isProtectedRoute && <AuthenticatedNav />}
 
                     {/* Page Content */}
                     <Box style={{ flex: "1" }}>

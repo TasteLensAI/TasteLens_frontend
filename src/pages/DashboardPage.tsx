@@ -1,6 +1,5 @@
-import { Flex, Box, Heading, Text, Card, Button } from "@radix-ui/themes";
+import { Flex, Box, Heading, Text, Card } from "@radix-ui/themes";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
 import {
     MagnifyingGlassIcon,
     BookmarkIcon,
@@ -10,7 +9,6 @@ import {
 
 export function DashboardPage() {
     const navigate = useNavigate();
-    const { user, logout } = useAuth();
 
     const dashboardItems = [
         {
@@ -47,62 +45,14 @@ export function DashboardPage() {
         },
     ];
 
-    const handleLogout = () => {
-        logout();
-        navigate("/");
-    };
-
     return (
         <Flex
             direction="column"
             style={{
-                minHeight: "100vh",
+                minHeight: "calc(100vh - 60px)",
                 backgroundColor: "var(--gray-2)",
             }}
         >
-            {/* Header */}
-            <Box
-                style={{
-                    borderBottom: "1px solid var(--gray-6)",
-                    backgroundColor: "var(--color-surface)",
-                }}
-            >
-                <Flex
-                    justify="between"
-                    align="center"
-                    style={{ padding: "var(--space-4) var(--space-6)" }}
-                >
-                    <Text
-                        size="6"
-                        weight="bold"
-                        style={{
-                            background:
-                                "linear-gradient(135deg, var(--violet-11), var(--pink-11))",
-                            WebkitBackgroundClip: "text",
-                            WebkitTextFillColor: "transparent",
-                            backgroundClip: "text",
-                        }}
-                    >
-                        TasteLens
-                    </Text>
-                    <Flex align="center" gap="4">
-                        <Text size="2" color="gray">
-                            Welcome,{" "}
-                            <strong>
-                                {user?.displayName || user?.username}
-                            </strong>
-                        </Text>
-                        <Button
-                            variant="soft"
-                            color="gray"
-                            onClick={handleLogout}
-                        >
-                            Logout
-                        </Button>
-                    </Flex>
-                </Flex>
-            </Box>
-
             {/* Main Content */}
             <Flex
                 direction="column"

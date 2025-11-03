@@ -30,7 +30,7 @@ const LoginForm: React.FC = () => {
             const result = await login(username, password);
 
             if (result.success) {
-                alert("Login successful! Welcome back!");
+                // alert("Login successful! Welcome back!");
                 navigate("/dashboard"); // Redirect to dashboard after login
             } else {
                 alert(`Login failed: ${result.message}`);
@@ -127,7 +127,7 @@ const RegistrationForm: React.FC = () => {
             const result = await register(userData);
 
             if (result.success) {
-                alert("Registration successful! Welcome to TasteLens!");
+                // alert("Registration successful! Welcome to TasteLens!");
                 navigate("/dashboard"); // Redirect to dashboard after registration
             } else {
                 alert(`Registration failed: ${result.message}`);
