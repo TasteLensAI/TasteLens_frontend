@@ -73,10 +73,11 @@ export function HomePage() {
                         <Flex gap="3" mt="3">
                             <Button
                                 size="3"
+                                color="cyan"
+                                variant="solid"
                                 onClick={handleLoginClick}
                                 style={{
-                                    backgroundColor: "var(--accent-9)",
-                                    color: "white",
+                                    cursor: "pointer",
                                 }}
                             >
                                 Sign In / Create Account
